@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:vaca_leiteira/cadvaca.dart';
-//import 'package:vaca_leiteira/rendimento.dart';
-
+import 'package:vaca_leiteira/rendimento.dart';
+import 'cadvaca.dart';
+import 'login.dart' as login;
 
 class MenuPage extends StatefulWidget {
   const MenuPage({Key? key});
@@ -14,42 +14,85 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> {
   List<Vaca> vacas = [];
+  int? userId;
 
- Future<void> fetchVacas() async {
-  final vacasResponse = await http.get(Uri.parse('http://192.168.18.8:8000/vaca/'));
-  final producaoResponse = await http.get(Uri.parse('http://192.168.18.8:8000/rendimento/'));
+  Future<void> fetchVacas() async {
+    userId = login.LoginPage.userId;
 
-  if (vacasResponse.statusCode == 200 && producaoResponse.statusCode == 200) {
-    final List<dynamic> vacasJson = jsonDecode(vacasResponse.body);
-    final List<dynamic> producaoJson = jsonDecode(producaoResponse.body);
+    final vacasResponse = await http.get(Uri.parse('http://192.168.18.8:8000/vaca/?usuario=$userId'));
 
-    final List<Vaca> fetchedVacas = vacasJson.map((item) {
-      final vacaId = item['id'];
-      final producaoData = producaoJson.firstWhere((producao) => producao['vaca_id'] == vacaId);
+    if (vacasResponse.statusCode == 200) {
+      final List<dynamic> vacasJson = jsonDecode(vacasResponse.body);
 
-      return Vaca.fromJson({
-        
-        'nome': producaoData['nome'],
-        'raca': producaoData['raca'],
-        'idade': producaoData['idade'],
-        'peso': producaoData['peso'],
-        'dia': producaoData['dia'],
-        'litros': producaoData['litros'],
-      }
+      final List<Vaca> fetchedVacas = vacasJson.map((item) {
+        return Vaca(
+          id: item['id'],
+          nome: item['nome'],
+          raca: item['raca'],
+          idade: item['idade'],
+          peso: item['kg'].toDouble(),
+        );
+      }).toList();
+
+      setState(() {
+        vacas = fetchedVacas;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao carregar as vacas.'),
+        ),
       );
-    }).toList();
+    }
+  }
 
-    setState(() {
-      vacas = fetchedVacas;
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Falha ao carregar as vacas.'),
-      ),
+  Future<void> deleteVaca(int vacaId) async {
+    final url = Uri.parse('http://192.168.18.8:8000/vaca/$vacaId/');
+
+    final response = await http.delete(url);
+
+    if (response.statusCode == 204) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vaca excluída com sucesso.'),
+        ),
+      );
+      fetchVacas();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao excluir a vaca.'),
+        ),
+      );
+    }
+  }
+
+  Future<bool?> showDeleteConfirmationDialog(int vacaId) {
+    return showDialog<bool?>(
+
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmação'),
+          content: Text('Tem certeza de que deseja excluir esta vaca?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Retorna false para indicar que a exclusão foi cancelada
+              },
+            ),
+            TextButton(
+              child: Text('Excluir'),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Retorna true para indicar que a exclusão foi confirmada
+              },
+            ),
+          ],
+        );
+      },
     );
   }
-}
 
   @override
   void initState() {
@@ -61,7 +104,8 @@ class _MenuPageState extends State<MenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastro'),
+        title:  Text('Cadastro'),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -75,11 +119,12 @@ class _MenuPageState extends State<MenuPage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const CadastroPageV()),
+                    MaterialPageRoute(builder: (context) => CadastroPageV()),
                   );
                 },
                 child: const Text('Cadastrar Vaca'),
               ),
+              
               const SizedBox(height: 30),
               const Text(
                 'Vacas cadastradas:',
@@ -94,14 +139,34 @@ class _MenuPageState extends State<MenuPage> {
               else
                 Column(
                   children: vacas.map((vaca) {
-                    return ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => VacaDetailsPage(vaca: vaca)),
-                        );
-                      },
-                      child: Text('Vaca ${vaca.id} - ${vaca.nome}'),
+                    return Card(
+                      child: ListTile(
+                        title: Text('Nome: ${vaca.nome}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Raça: ${vaca.raca}'),
+                            Text('Idade: ${vaca.idade}'),
+                            Text('Peso: ${vaca.peso}'),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete,size: 30, color: Color.fromARGB(255, 165, 6, 6),),
+                          onPressed: () async {
+                            bool? deleteConfirmed = await showDeleteConfirmationDialog(vaca.id);
+                            if (deleteConfirmed == true) {
+                              deleteVaca(vaca.id);
+                            }
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => VacaDetailsPage(vaca: vaca)),
+                          );
+                        },
+                        
+                      ),
                     );
                   }).toList(),
                 ),
@@ -116,7 +181,7 @@ class _MenuPageState extends State<MenuPage> {
 class VacaDetailsPage extends StatelessWidget {
   final Vaca vaca;
 
-  const VacaDetailsPage({super.key, required this.vaca});
+  const VacaDetailsPage({Key? key, required this.vaca}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +199,16 @@ class VacaDetailsPage extends StatelessWidget {
             Text('Raça: ${vaca.raca}'),
             Text('Idade: ${vaca.idade}'),
             Text('Peso: ${vaca.peso}'),
-            Text('litros: ${vaca.litros}'),
+            const SizedBox(height: 10),
+              ElevatedButton(
+               onPressed: () {
+               Navigator.push(
+               context,
+               MaterialPageRoute(builder: (context) => RendPage(vacaId: vaca.id)),
+      );
+  },
+  child: const Text('Cadastrar Rendimentos'),
+),
           ],
         ),
       ),
@@ -148,7 +222,6 @@ class Vaca {
   final String raca;
   final int idade;
   final double peso;
-  final double litros;
 
   Vaca({
     required this.id,
@@ -156,17 +229,18 @@ class Vaca {
     required this.raca,
     required this.idade,
     required this.peso,
-    required this.litros,
   });
 
   factory Vaca.fromJson(Map<String, dynamic> json) {
+    final pesoString = json['peso'].toString();
+    final peso = double.parse(pesoString.contains('.') ? pesoString.replaceAll(RegExp(r"0*$"), '') : pesoString);
+
     return Vaca(
       id: json['id'],
       nome: json['nome'],
       raca: json['raca'],
       idade: json['idade'],
-      peso: json['peso'],
-      litros: json['litros'],
+      peso: peso,
     );
   }
 }

@@ -36,7 +36,7 @@ class _CadastroPageState extends State<CadastroPage> {
     return;
   }
 
-    final url = Uri.parse('http://10.0.0.108:8000/pessoa/'); // Atualize com a URL da sua API local
+    final url = Uri.parse('http://192.168.18.8:8000/pessoa/'); // Atualize com a URL da sua API local
 
     final response = await http.post(
       url,
@@ -54,7 +54,7 @@ class _CadastroPageState extends State<CadastroPage> {
       content: Text('Cadastro realizado com sucesso!'),
     ),
   );
-  Timer(Duration(seconds: 2), () {
+  Timer(const Duration(seconds: 2), () {
     Navigator.of(context).pop(); 
   });
   }else {

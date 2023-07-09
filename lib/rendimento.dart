@@ -1,44 +1,97 @@
-//import 'dart:ffi';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class RendPage extends StatefulWidget {
-  const RendPage({super.key});
+  const RendPage({Key? key, required this.vacaId});
+
+  final int vacaId;
 
   @override
-  // ignore: library_private_types_in_public_api
   _RendPageState createState() => _RendPageState();
 }
 
 class _RendPageState extends State<RendPage> {
   final TextEditingController diaController = TextEditingController();
   final TextEditingController rendimentoController = TextEditingController();
+
+  double totalRendimento = 0.0;
+
   void cadastrarRendimento(BuildContext context) async {
-  final data = diaController.text; // Obter a data do TextFormField
-  final rendimento = double.parse(rendimentoController.text); // Obter o rendimento do TextFormField
+  final dia = diaController.text;
+  final rendimento = double.tryParse(rendimentoController.text);
 
-  final response = await http.post(
-    Uri.parse('http://10.0.0.108:8000/rendimento/'), // Atualize com a URL correta da sua API local
-    body: {
-      'dia': data,
-      'rend': rendimento.toString(),
-    },
-  );
-
-  if (response.statusCode == 201) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Rendimento cadastrado com sucesso!'),
-      ),
+  if (rendimento != null) {
+    final rendimentoObj = RendimentoD(
+      dia: dia,
+      litros: rendimento,
+      vaca: widget.vacaId,
     );
+
+    final response = await http.post(
+      Uri.parse('http://192.168.18.8:8000/rendimento/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(rendimentoObj.toMap()),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Rendimento cadastrado com sucesso!'),
+        ),
+      );
+      Navigator.pop(context); // Redirect to the previous page (MenuPage)
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao cadastrar o rendimento.'),
+        ),
+      );
+    }
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Falha ao cadastrar o rendimento.'),
+        content: Text('Valor de rendimento inválido.'),
       ),
     );
   }
 }
+
+  Future<double> getTotalRendimento() async {
+    final response = await http.get(
+      Uri.parse('http://192.168.18.8:8000/rendimento/?vaca=${widget.vacaId}'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> rendimentosJson = jsonDecode(response.body);
+      final double sum = rendimentosJson.fold(0.0, (previousValue, rendimentoJson) {
+        final rendimento = RendimentoD.fromMap(rendimentoJson);
+        return previousValue + rendimento.litros;
+      });
+      return sum;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao obter o total de rendimentos.'),
+        ),
+      );
+      return 0.0;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTotalRendimento();
+  }
+
+  Future<void> fetchTotalRendimento() async {
+    final total = await getTotalRendimento();
+    setState(() {
+      totalRendimento = total;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +135,14 @@ class _RendPageState extends State<RendPage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 30),
+              Text(
+                'Total de Rendimentos: $totalRendimento',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
@@ -89,31 +150,75 @@ class _RendPageState extends State<RendPage> {
     );
   }
 }
+
 class RendimentoD {
   int? id;
-  DateTime dia;
-  double rend;
- 
+  String dia;
+  double litros;
+  int vaca;
 
-  RendimentoD({this.id, required this.dia, required this.rend});
+  RendimentoD({this.id, required this.dia, required this.litros, required this.vaca});
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'dia': dia,
-      'rend': rend,
-      
-      
+      'litros': litros,
+      'vaca': vaca,
     };
   }
 
   factory RendimentoD.fromMap(Map<String, dynamic> map) {
     return RendimentoD(
       id: map['id'],
-      dia: map['data'],
-      rend: map['rendimento'],
-      
+      dia: map['dia'],
+      litros: double.parse(map['litros'].toString()),
+      vaca: map['vaca'],
     );
   }
-   List<Object?> get props => [id];
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Rendimento de Leite',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MenuPage(),
+    );
+  }
+}
+
+class MenuPage extends StatefulWidget {
+  @override
+  _MenuPageState createState() => _MenuPageState();
+}
+
+class _MenuPageState extends State<MenuPage> {
+  int get vacaId {
+    // Replace the code below with the logic to obtain the appropriate vacaId value.
+    return 1; // Replace 1 with the actual vacaId value.
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Menu Page'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => RendPage(vacaId: vacaId)),
+            );
+          },
+          child: const Text('Go to RendPage'),
+        ),
+      ),
+    );
+  }
 }

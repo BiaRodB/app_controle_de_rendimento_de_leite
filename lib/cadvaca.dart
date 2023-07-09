@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:vaca_leiteira/menu.dart';
 import 'dart:convert';
+import 'login.dart';
+// Importe a classe MenuPage
 
 class CadastroPageV extends StatefulWidget {
-  const CadastroPageV({Key? key});
+  CadastroPageV({Key? key}) : super(key: key);
 
   @override
   _CadastroPageVState createState() => _CadastroPageVState();
 }
 
 class _CadastroPageVState extends State<CadastroPageV> {
-  final TextEditingController nomeController = TextEditingController();
-  final TextEditingController racaController = TextEditingController();
-  final TextEditingController idadeController = TextEditingController();
-  final TextEditingController pesoController = TextEditingController();
+  TextEditingController nomeController = TextEditingController();
+  TextEditingController racaController = TextEditingController();
+  TextEditingController idadeController = TextEditingController();
+  TextEditingController pesoController = TextEditingController();
 
   Future<void> cadastrar(BuildContext context) async {
     final nome = nomeController.text;
@@ -21,7 +24,7 @@ class _CadastroPageVState extends State<CadastroPageV> {
     final idade = int.tryParse(idadeController.text) ?? 0;
     final peso = double.tryParse(pesoController.text) ?? 0;
 
-    final url = Uri.parse('http://10.0.0.108:8000/vaca/'); // Atualize com a URL da sua API local
+    final url = Uri.parse('http://192.168.18.8:8000/vaca/');
 
     final response = await http.post(
       url,
@@ -31,6 +34,7 @@ class _CadastroPageVState extends State<CadastroPageV> {
         'raca': raca,
         'idade': idade,
         'kg': peso,
+        'usuario': LoginPage.userId.toString(),
       }),
     );
 
@@ -39,6 +43,12 @@ class _CadastroPageVState extends State<CadastroPageV> {
         const SnackBar(
           content: Text('Cadastro realizado com sucesso!'),
         ),
+      );
+
+      // Redirecione para a página MenuPage
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => MenuPage()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +91,7 @@ class _CadastroPageVState extends State<CadastroPageV> {
                 controller: idadeController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Idade:',
+                  labelText: 'Idade',
                 ),
               ),
               const SizedBox(height: 30),
@@ -89,23 +99,13 @@ class _CadastroPageVState extends State<CadastroPageV> {
                 controller: pesoController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Kg:',
+                  labelText: 'Kg',
                 ),
               ),
               const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => cadastrar(context),
-                    child: const Text('Cadastrar'),
-                  ),
-                  const SizedBox(width: 20,),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Cancelar'),
-                  ),
-                ],
+              ElevatedButton(
+                onPressed: () => cadastrar(context),
+                child: const Text('Cadastrar'),
               ),
             ],
           ),
@@ -113,36 +113,4 @@ class _CadastroPageVState extends State<CadastroPageV> {
       ),
     );
   }
-}
-
-class CadastroV {
-  int? id;
-  final String nome;
-  final String raca;
-  final int idade;
-  final double peso;
-
-  CadastroV({this.id, required this.nome, required this.raca, required this.idade, required this.peso});
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nome': nome,
-      'raca': raca,
-      'idade': idade,
-      'peso': peso,
-    };
-  }
-
-  factory CadastroV.fromMap(Map<String, dynamic> map) {
-    return CadastroV(
-      id: map['id'],
-      nome: map['nome'],
-      raca: map['raca'],
-      idade: map['idade'],
-      peso: map['kg'],
-    );
-  }
-  List<Object?> get props => [id];
-
 }

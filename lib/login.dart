@@ -1,76 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:vaca_leiteira/cadvaca.dart';
 import 'dart:convert';
-import 'menu.dart';
+import 'menu.dart' as menu;
 import 'widgets/callgoogle.dart';
 import 'widgets/callfacebook.dart';
 import 'widgets/inputsfield.dart';
 import 'cadastro.dart';
 
+export 'package:flutter/material.dart'; // Importação necessária para exportar a classe Material do Flutter
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  static String email = '';
   static int? userId;
+
+  const LoginPage({Key? key}) : super(key: key);
 
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
-
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController senhaController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController senhaController = TextEditingController();
 
   Future<void> performLogin() async {
-    final email = emailController.text;
-    final senha = senhaController.text;
+    if (!mounted) {
+      return;
+    }
 
-    String apiUrl = 'http://10.0.0.108:8000/pessoa/'; // Substitua pela sua URL da API
+    String email = emailController.text.trim();
+    String senha = senhaController.text.trim();
 
-    http.Response response = await http.get(Uri.parse(apiUrl));
+    // Replace 'http://192.168.66.32:8000' with the appropriate API URL
+    Uri apiUrl = Uri.parse('http://192.168.18.8:8000/pessoa/');
+    final response = await http.get(apiUrl);
 
     if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
+      List<dynamic> users = json.decode(response.body);
+      bool isAuthenticated = false;
 
-      // Verifique se existe algum objeto na lista com o email e senha fornecidos
-      bool exists = jsonResponse.any((pessoa) =>
-          pessoa['email'] == email && pessoa['senha'] == senha);
+      for (var user in users) {
+        if (user['email'] == email && user['senha'] == senha) {
+          isAuthenticated = true;
+          setState(() {
+            LoginPage.userId = user['id']; // Update the userId variable
+          });
+          break;
+        }
+      }
 
-      if (exists) {
-         LoginPage.userId = jsonResponse.firstWhere(
-         (pessoa) => pessoa['email'] == email && pessoa['senha'] == senha,
-         )['id'];
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Sucesso'),
-              content: const Text('Login bem-sucedido!'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
+      if (isAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Login realizado com sucesso!',
+              style: TextStyle(color: Colors.green),
+            ),
+            duration: Duration(seconds: 2),
+          ),
         );
+        LoginPage.email = email; // Assign the value of 'nome' to the static variable in the LoginPage class
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const MenuPage()),
+          MaterialPageRoute(builder: (context) => const menu.MenuPage()),
         );
       } else {
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Erro de Login'),
-              content: const Text('Credenciais inválidas. Falha no login.'),
-              actions: <Widget>[
+              title: Text('Erro de Login'),
+              content: Text('Usuário ou senha inválidos.'),
+              actions: [
                 TextButton(
-                  child: const Text('OK'),
+                  child: Text('OK'),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -85,11 +89,11 @@ class _LoginPageState extends State<LoginPage> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Erro de Login'),
-            content: const Text('Falha na comunicação com o servidor.'),
-            actions: <Widget>[
+            title: Text('Erro de Login'),
+            content: Text('Não foi possível acessar a API.'),
+            actions: [
               TextButton(
-                child: const Text('OK'),
+                child: Text('OK'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -101,9 +105,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-
   bool rememberMe = false;
-
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +125,8 @@ class _LoginPageState extends State<LoginPage> {
               EmailInputFieldFb3(inputController: emailController),
               PasswordInput(
                 hintText: "Senha",
-                textEditingController: senhaController, controller: senhaController,
+                textEditingController: senhaController,
+                controller: senhaController,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -158,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Lógica para navegar para a tela de registro ou inscrição
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const CadastroPage()),
+                    MaterialPageRoute(builder: (context) =>  menu.MenuPage()),
                   );
                 },
                 child: const Text('Não tem a senha? Inscreva-se!'),
