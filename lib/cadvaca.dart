@@ -63,7 +63,7 @@ class _CadastroPageVState extends State<CadastroPageV> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastro'),
+        title: const Text('Cadastro de Vacas'),
         backgroundColor: Colors.green[300],
       ),
       body: SingleChildScrollView(

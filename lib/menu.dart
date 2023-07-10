@@ -106,7 +106,7 @@ class _MenuPageState extends State<MenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text('Cadastro'),
+  title: const Text('Menu de Vacas Cadastradas'),
   backgroundColor: Colors.green[300],
   automaticallyImplyLeading: false,
   actions: [
