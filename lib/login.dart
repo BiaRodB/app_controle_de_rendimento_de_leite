@@ -124,9 +124,10 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               Image.asset(
           'assets/images/user.png', // Insira o caminho da imagem
-          width: 600,
-          height: 600, 
+          width: 100,
+          height: 100, 
         ),
+         const SizedBox(height: 30),
               EmailInputFieldFb3(inputController: emailController),
               PasswordInput(
                 hintText: "Senha",
@@ -160,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: performLogin,
                 child: const Text('Entrar'),
               ),
-              
+
               const SizedBox(height: 30),
               TextButton(
                 onPressed: () {

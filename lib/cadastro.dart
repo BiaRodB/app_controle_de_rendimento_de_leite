@@ -85,8 +85,8 @@ class _CadastroPageState extends State<CadastroPage> {
           'assets/images/user.png', // Insira o caminho da imagem
           width: 100,
           height: 100, 
-         ),
-          const SizedBox(height: 30),
+        ),
+         const SizedBox(height: 30),
               TextFormField(
                 controller: nomeController,
                 decoration: const InputDecoration(
