@@ -129,11 +129,6 @@ class _MenuPageState extends State<MenuPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Image.asset(
-             'assets/images/vaca.jpg', // Insira o caminho da imagem
-             width: 100,
-             height: 100, 
-            ),
               const SizedBox(height: 30),
               const Text(
                 'Vacas cadastradas:',

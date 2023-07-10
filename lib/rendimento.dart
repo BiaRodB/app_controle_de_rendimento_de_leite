@@ -108,12 +108,6 @@ class _RendPageState extends State<RendPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Image.asset(
-             'assets/images/vaca.jpg', // Insira o caminho da imagem
-             width: 100,
-             height: 100, 
-            ),
-            const SizedBox(height: 30),
               TextFormField(
                 controller: diaController,
                 decoration: const InputDecoration(
