@@ -41,12 +41,16 @@ class _SplashPageState extends State {
   @override
   Widget build(BuildContext context) {
     return EasySplashScreen(
+      
       logo: Image.asset(
           'assets/images/vaca.jpg', // Insira o caminho da imagem
-          width: 200,
-          height: 200,
+          width: 600,
+          height: 600,
+          
         ),
+      title: Text('Vaca Leiteira'),
       backgroundColor: Colors.green,
+      
       showLoader: true,
       loadingText: const Text("Loading..."),
       navigator: const LoginPage(),

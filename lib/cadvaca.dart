@@ -64,6 +64,7 @@ class _CadastroPageVState extends State<CadastroPageV> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cadastro'),
+        backgroundColor: Colors.green[300],
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -73,6 +74,12 @@ class _CadastroPageVState extends State<CadastroPageV> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+             Image.asset(
+             'assets/images/vaca.jpg', // Insira o caminho da imagem
+             width: 100,
+             height: 100, 
+            ),
+              const SizedBox(height: 30),
               TextFormField(
                 controller: nomeController,
                 decoration: const InputDecoration(

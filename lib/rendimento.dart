@@ -19,44 +19,44 @@ class _RendPageState extends State<RendPage> {
   double totalRendimento = 0.0;
 
   void cadastrarRendimento(BuildContext context) async {
-  final dia = diaController.text;
-  final rendimento = double.tryParse(rendimentoController.text);
+    final dia = diaController.text;
+    final rendimento = double.tryParse(rendimentoController.text);
 
-  if (rendimento != null) {
-    final rendimentoObj = RendimentoD(
-      dia: dia,
-      litros: rendimento,
-      vaca: widget.vacaId,
-    );
-
-    final response = await http.post(
-      Uri.parse('http://192.168.18.8:8000/rendimento/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(rendimentoObj.toMap()),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Rendimento cadastrado com sucesso!'),
-        ),
+    if (rendimento != null) {
+      final rendimentoObj = RendimentoD(
+        dia: dia,
+        litros: rendimento,
+        vaca: widget.vacaId,
       );
-      Navigator.pop(context); // Redirect to the previous page (MenuPage)
+
+      final response = await http.post(
+        Uri.parse('http://192.168.18.8:8000/rendimento/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(rendimentoObj.toMap()),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rendimento cadastrado com sucesso!'),
+          ),
+        );
+        Navigator.pop(context); // Redirect to the previous page (MenuPage)
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Falha ao cadastrar o rendimento.'),
+          ),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Falha ao cadastrar o rendimento.'),
+          content: Text('Valor de rendimento inválido.'),
         ),
       );
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Valor de rendimento inválido.'),
-      ),
-    );
   }
-}
 
   Future<double> getTotalRendimento() async {
     final response = await http.get(
@@ -98,6 +98,7 @@ class _RendPageState extends State<RendPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rendimento de leite do dia'),
+       backgroundColor: Colors.green[300],
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -107,6 +108,12 @@ class _RendPageState extends State<RendPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Image.asset(
+             'assets/images/vaca.jpg', // Insira o caminho da imagem
+             width: 100,
+             height: 100, 
+            ),
+            const SizedBox(height: 30),
               TextFormField(
                 controller: diaController,
                 decoration: const InputDecoration(
@@ -136,12 +143,24 @@ class _RendPageState extends State<RendPage> {
                 ],
               ),
               const SizedBox(height: 30),
-              Text(
-                'Total de Rendimentos: $totalRendimento',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              FutureBuilder<double>(
+                future: getTotalRendimento(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return const Text('Erro ao obter o total de rendimentos.');
+                  } else {
+                    final totalRendimento = snapshot.data!;
+                    return Text(
+                      'Total de Rendimentos: $totalRendimento',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }
+                },
               ),
             ],
           ),
@@ -174,51 +193,6 @@ class RendimentoD {
       dia: map['dia'],
       litros: double.parse(map['litros'].toString()),
       vaca: map['vaca'],
-    );
-  }
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Rendimento de Leite',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MenuPage(),
-    );
-  }
-}
-
-class MenuPage extends StatefulWidget {
-  @override
-  _MenuPageState createState() => _MenuPageState();
-}
-
-class _MenuPageState extends State<MenuPage> {
-  int get vacaId {
-    // Replace the code below with the logic to obtain the appropriate vacaId value.
-    return 1; // Replace 1 with the actual vacaId value.
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu Page'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => RendPage(vacaId: vacaId)),
-            );
-          },
-          child: const Text('Go to RendPage'),
-        ),
-      ),
     );
   }
 }

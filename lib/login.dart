@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:vaca_leiteira/cadvaca.dart';
 import 'dart:convert';
 import 'menu.dart' as menu;
 import 'widgets/callgoogle.dart';
@@ -122,6 +121,12 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Image.asset(
+          'assets/images/user.png', // Insira o caminho da imagem
+          width: 100,
+          height: 100, 
+        ),
+         const SizedBox(height: 30),
               EmailInputFieldFb3(inputController: emailController),
               PasswordInput(
                 hintText: "Senha",
@@ -161,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Lógica para navegar para a tela de registro ou inscrição
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) =>  menu.MenuPage()),
+                    MaterialPageRoute(builder: (context) =>  const CadastroPage()),
                   );
                 },
                 child: const Text('Não tem a senha? Inscreva-se!'),

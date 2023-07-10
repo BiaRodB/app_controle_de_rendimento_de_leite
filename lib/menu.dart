@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vaca_leiteira/rendimento.dart';
+import 'package:vaca_leiteira/widgets/calldown.dart';
 import 'cadvaca.dart';
 import 'login.dart' as login;
+import 'login.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({Key? key});
@@ -104,9 +106,21 @@ class _MenuPageState extends State<MenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:  Text('Cadastro'),
-        automaticallyImplyLeading: false,
-      ),
+  title: const Text('Cadastro'),
+  backgroundColor: Colors.green[300],
+  automaticallyImplyLeading: false,
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.logout),
+      onPressed: () {
+         Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) =>  LoginPage()),
+                  );
+      },
+    ),
+  ],
+),
       body: SingleChildScrollView(
         child: Container(
           height: 700,
@@ -115,16 +129,11 @@ class _MenuPageState extends State<MenuPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CadastroPageV()),
-                  );
-                },
-                child: const Text('Cadastrar Vaca'),
-              ),
-              
+              Image.asset(
+             'assets/images/vaca.jpg', // Insira o caminho da imagem
+             width: 100,
+             height: 100, 
+            ),
               const SizedBox(height: 30),
               const Text(
                 'Vacas cadastradas:',
@@ -169,11 +178,19 @@ class _MenuPageState extends State<MenuPage> {
                       ),
                     );
                   }).toList(),
-                ),
-            ],
+               ),
+               ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CadastroPageV()),
+                  );
+                },
+                child: Icon(Icons.add),
+              ),   ],
           ),
-        ),
-      ),
+     ),
+       ),
     );
   }
 }
@@ -199,6 +216,7 @@ class VacaDetailsPage extends StatelessWidget {
             Text('Raça: ${vaca.raca}'),
             Text('Idade: ${vaca.idade}'),
             Text('Peso: ${vaca.peso}'),
+
             const SizedBox(height: 10),
               ElevatedButton(
                onPressed: () {
@@ -206,8 +224,8 @@ class VacaDetailsPage extends StatelessWidget {
                context,
                MaterialPageRoute(builder: (context) => RendPage(vacaId: vaca.id)),
       );
-  },
-  child: const Text('Cadastrar Rendimentos'),
+    },
+    child: const Text('Cadastrar Rendimentos'),
 ),
           ],
         ),
@@ -243,4 +261,6 @@ class Vaca {
       peso: peso,
     );
   }
+
+  get rendimentos => null;
 }
