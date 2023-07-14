@@ -1,22 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-class RendPage extends StatefulWidget {
-  const RendPage({Key? key, required this.vacaId});
+class CadastroRendimentoPage extends StatefulWidget {
+  const CadastroRendimentoPage({Key? key, required this.vacaId});
 
   final int vacaId;
 
   @override
-  _RendPageState createState() => _RendPageState();
+  _CadastroRendimentoPageState createState() => _CadastroRendimentoPageState();
 }
 
-class _RendPageState extends State<RendPage> {
+class _CadastroRendimentoPageState extends State<CadastroRendimentoPage> {
   final TextEditingController diaController = TextEditingController();
   final TextEditingController rendimentoController = TextEditingController();
-
-  double totalRendimento = 0.0;
 
   void cadastrarRendimento(BuildContext context) async {
     final dia = diaController.text;
@@ -41,7 +38,7 @@ class _RendPageState extends State<RendPage> {
             content: Text('Rendimento cadastrado com sucesso!'),
           ),
         );
-        Navigator.pop(context); // Redirect to the previous page (MenuPage)
+        Navigator.pop(context); // Redirect to the previous page
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -58,62 +55,20 @@ class _RendPageState extends State<RendPage> {
     }
   }
 
-  Future<double> getTotalRendimento() async {
-    final response = await http.get(
-      Uri.parse('http://192.168.18.8:8000/rendimento/?vaca=${widget.vacaId}'),
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> rendimentosJson = jsonDecode(response.body);
-      final double sum = rendimentosJson.fold(0.0, (previousValue, rendimentoJson) {
-        final rendimento = RendimentoD.fromMap(rendimentoJson);
-        return previousValue + rendimento.litros;
-      });
-      return sum;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Falha ao obter o total de rendimentos.'),
-        ),
-      );
-      return 0.0;
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    fetchTotalRendimento();
-  }
-
-  Future<void> fetchTotalRendimento() async {
-    final total = await getTotalRendimento();
-    setState(() {
-      totalRendimento = total;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rendimento de leite do dia'),
-       backgroundColor: Colors.green[300],
+        title: const Text('Cadastrar a Quantidade de Litros de Leite'),
+        backgroundColor: Colors.green[300],
       ),
       body: SingleChildScrollView(
         child: Container(
-          height: 700,
-          width: 500,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Image.asset(
-             'assets/images/vaca.jpg', // Insira o caminho da imagem
-             width: 100,
-             height: 100, 
-            ),
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
               TextFormField(
                 controller: diaController,
                 decoration: const InputDecoration(
@@ -124,7 +79,7 @@ class _RendPageState extends State<RendPage> {
               TextFormField(
                 controller: rendimentoController,
                 decoration: const InputDecoration(
-                  labelText: 'Rendimento',
+                  labelText: 'Litros de Leite',
                 ),
               ),
               const SizedBox(height: 30),
@@ -137,10 +92,149 @@ class _RendPageState extends State<RendPage> {
                   ),
                   const SizedBox(width: 20),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pop(context); // Redirect to the previous page
+                    },
                     child: const Text('Cancelar'),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+class VisualizacaoRendimentoPage extends StatefulWidget {
+  const VisualizacaoRendimentoPage({Key? key, required this.vacaId});
+
+  final int vacaId;
+
+  @override
+  _VisualizacaoRendimentoPageState createState() =>
+      _VisualizacaoRendimentoPageState();
+}
+
+class _VisualizacaoRendimentoPageState extends State<VisualizacaoRendimentoPage> {
+  double totalRendimento = 0.0;
+  List<RendimentoD> rendimentos = [];
+  String nomeVaca = '';
+
+  Future<double> getTotalRendimento() async {
+    final response = await http.get(
+      Uri.parse('http://192.168.18.8:8000/rendimento/?vaca=${widget.vacaId}'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> rendimentosJson = jsonDecode(response.body);
+
+      final filteredRendimentos = rendimentosJson.where((rendimentoJson) {
+        final rendimento = RendimentoD.fromMap(rendimentoJson);
+        return rendimento.vaca == widget.vacaId;
+      }).toList();
+
+      final double sum = filteredRendimentos.fold(0.0, (previousValue, rendimentoJson) {
+        final rendimento = RendimentoD.fromMap(rendimentoJson);
+        return previousValue + rendimento.litros;
+      });
+
+      return sum;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao obter o total de rendimentos.'),
+        ),
+      );
+      return 0.0;
+    }
+  }
+
+  Future<List<RendimentoD>> getRendimentos() async {
+    final response = await http.get(
+      Uri.parse('http://192.168.18.8:8000/rendimento/'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> rendimentosJson = jsonDecode(response.body);
+      final List<RendimentoD> rendimentosList = rendimentosJson.map((rendimentoJson) {
+        final rendimento = RendimentoD.fromMap(rendimentoJson);
+        if (rendimento.vaca == widget.vacaId) {
+          return rendimento;
+        } else {
+          return null;
+        }
+      }).whereType<RendimentoD>().toList();
+
+      return rendimentosList;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao obter os rendimentos.'),
+        ),
+      );
+      return [];
+    }
+  }
+
+  Future<String> getNomeVaca() async {
+    final response = await http.get(
+      Uri.parse('http://192.168.18.8:8000/vaca/${widget.vacaId}'),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> vacaJson = jsonDecode(response.body);
+      final vaca = Vaca.fromMap(vacaJson);
+      return vaca.nome;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao obter o nome da vaca.'),
+        ),
+      );
+      return '';
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getTotalRendimento().then((total) {
+      setState(() {
+        totalRendimento = total;
+      });
+    });
+    getRendimentos().then((list) {
+      setState(() {
+        rendimentos = list;
+      });
+    });
+    getNomeVaca().then((nome) {
+      setState(() {
+        nomeVaca = nome;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Rendimento de leite'),
+        backgroundColor: Colors.green[300],
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          height: 700,
+          width: 500,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Image.asset(
+                'assets/images/vaca.jpg', // Insira o caminho da imagem
+                width: 100,
+                height: 100,
               ),
               const SizedBox(height: 30),
               FutureBuilder<double>(
@@ -153,7 +247,7 @@ class _RendPageState extends State<RendPage> {
                   } else {
                     final totalRendimento = snapshot.data!;
                     return Text(
-                      'Total de Rendimentos: $totalRendimento',
+                      'Total de Rendimentos da vaca $nomeVaca: $totalRendimento',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -162,10 +256,44 @@ class _RendPageState extends State<RendPage> {
                   }
                 },
               ),
+              const SizedBox(height: 30),
+              Text(
+                'Rendimentos de Litros de Leite:',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: rendimentos.length,
+                itemBuilder: (context, index) {
+                  final rendimento = rendimentos[index];
+                  return ListTile(
+                    title:  Text('Rendimento: ${rendimento.litros}'),
+                    subtitle: Text('Dia: ${rendimento.dia}'),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class Vaca {
+  int id;
+  String nome;
+
+  Vaca({required this.id, required this.nome});
+
+  factory Vaca.fromMap(Map<String, dynamic> map) {
+    return Vaca(
+      id: map['id'],
+      nome: map['nome'],
     );
   }
 }

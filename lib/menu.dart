@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:vaca_leiteira/redgeral.dart';
 import 'package:vaca_leiteira/rendimento.dart';
-import 'package:vaca_leiteira/widgets/calldown.dart';
+import 'package:vaca_leiteira/widgets/mostrar_rend.dart';
 import 'cadvaca.dart';
 import 'login.dart' as login;
 import 'login.dart';
@@ -33,11 +34,12 @@ class _MenuPageState extends State<MenuPage> {
           raca: item['raca'],
           idade: item['idade'],
           peso: item['kg'].toDouble(),
+          userId: item['usuario'],
         );
       }).toList();
 
       setState(() {
-        vacas = fetchedVacas;
+        vacas = fetchedVacas.where((vaca) => vaca.userId == userId).toList();
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -49,7 +51,7 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   Future<void> deleteVaca(int vacaId) async {
-    final url = Uri.parse('http://192.168.18.8:8000/vaca/$vacaId/');
+    final url = Uri.parse('http://192.168.18.8:8000/vaca/');
 
     final response = await http.delete(url);
 
@@ -71,7 +73,6 @@ class _MenuPageState extends State<MenuPage> {
 
   Future<bool?> showDeleteConfirmationDialog(int vacaId) {
     return showDialog<bool?>(
-
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -106,21 +107,21 @@ class _MenuPageState extends State<MenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text('Menu de Vacas Cadastradas'),
-  backgroundColor: Colors.green[300],
-  automaticallyImplyLeading: false,
-  actions: [
-    IconButton(
-      icon: const Icon(Icons.logout),
-      onPressed: () {
-         Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) =>  LoginPage()),
-                  );
-      },
-    ),
-  ],
-),
+        title: const Text('Menu de Vacas Cadastradas'),
+        backgroundColor: Colors.green[300],
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Container(
           height: 700,
@@ -130,10 +131,10 @@ class _MenuPageState extends State<MenuPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset(
-             'assets/images/vaca.jpg', // Insira o caminho da imagem
-             width: 100,
-             height: 100, 
-            ),
+                'assets/images/vaca.jpg',
+                width: 100,
+                height: 100,
+              ),
               const SizedBox(height: 30),
               const Text(
                 'Vacas cadastradas:',
@@ -160,7 +161,7 @@ class _MenuPageState extends State<MenuPage> {
                           ],
                         ),
                         trailing: IconButton(
-                          icon: Icon(Icons.delete,size: 30, color: Color.fromARGB(255, 165, 6, 6),),
+                          icon: Icon(Icons.delete, size: 30, color: Color.fromARGB(255, 165, 6, 6)),
                           onPressed: () async {
                             bool? deleteConfirmed = await showDeleteConfirmationDialog(vaca.id);
                             if (deleteConfirmed == true) {
@@ -174,23 +175,48 @@ class _MenuPageState extends State<MenuPage> {
                             MaterialPageRoute(builder: (context) => VacaDetailsPage(vaca: vaca)),
                           );
                         },
-                        
                       ),
                     );
                   }).toList(),
-               ),
-               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CadastroPageV()),
-                  );
-                },
-                child: Icon(Icons.add),
-              ),   ],
+                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => MRendPage()),
+                      );
+                    },
+                    child: Icon(Icons.reorder_rounded),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CadastroPageV()),
+                      );
+                    },
+                    child: Icon(Icons.add),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PdfCreator()),
+                      );
+                    },
+                    child: Icon(Icons.picture_as_pdf),
+                  ),
+                ],
+              ),
+            ],
           ),
-     ),
-       ),
+        ),
+      ),
     );
   }
 }
@@ -216,17 +242,33 @@ class VacaDetailsPage extends StatelessWidget {
             Text('Raça: ${vaca.raca}'),
             Text('Idade: ${vaca.idade}'),
             Text('Peso: ${vaca.peso}'),
-
             const SizedBox(height: 10),
-              ElevatedButton(
-               onPressed: () {
-               Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => RendPage(vacaId: vaca.id)),
-      );
-    },
-    child: const Text('Cadastrar Rendimentos'),
-),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CadastroRendimentoPage(vacaId: vaca.id)),
+                      );
+                    },
+                    child: const Text('Cadastrar Rendimentos'),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => VisualizacaoRendimentoPage(vacaId: vaca.id)),
+                      );
+                    },
+                    child: const Text('Ver Rendimentos'),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -240,6 +282,7 @@ class Vaca {
   final String raca;
   final int idade;
   final double peso;
+  final int userId;
 
   Vaca({
     required this.id,
@@ -247,6 +290,7 @@ class Vaca {
     required this.raca,
     required this.idade,
     required this.peso,
+    required this.userId,
   });
 
   factory Vaca.fromJson(Map<String, dynamic> json) {
@@ -259,6 +303,7 @@ class Vaca {
       raca: json['raca'],
       idade: json['idade'],
       peso: peso,
+      userId: json['usuario'],
     );
   }
 
